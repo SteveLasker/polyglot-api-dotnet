@@ -14,10 +14,10 @@
 
             "launchBrowser": {
                 "enabled": true,
-                "args": "${auto-detect-url}/api/hello",
+                "args": "http://localhost",
                 "windows": {
                     "command": "cmd.exe",
-                    "args": "/C start ${auto-detect-url}/api/hello"
+                    "args": "/C start http://localhost"
                 },
                 "osx": {
                     "command": "open"

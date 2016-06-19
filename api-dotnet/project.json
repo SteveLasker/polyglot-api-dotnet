@@ -24,8 +24,7 @@
   "publishOptions": {
     "include": [
       "Dockerfile",
-      "dockerfile.debug",
-      "dockerfile.release"
+      "dockerfile.debug"
     ]
   }
 }
