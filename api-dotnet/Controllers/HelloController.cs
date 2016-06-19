@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Runtime.InteropServices;
 
 namespace ApiDotNet.Controllers
 {
@@ -9,7 +10,13 @@ namespace ApiDotNet.Controllers
         [HttpGet]
         public string Get()
         {
-            return $"Hello from api-dotnet at: {DateTimeOffset.UtcNow.ToString("u")}";
+            var osDescription = RuntimeInformation.OSDescription;
+            var machineName = Environment.MachineName;
+
+            var message = string.Format("Hello from api-dotnet running on: {1}", 
+                osDescription);
+
+            return message;
         }
     }
 }
