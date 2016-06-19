@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Runtime.InteropServices;
 
 namespace ApiDotNet.Controllers
 {
@@ -9,7 +10,29 @@ namespace ApiDotNet.Controllers
         [HttpGet]
         public string Get()
         {
-            return $"Hello from api-dotnet at: {DateTimeOffset.UtcNow.ToString("u")}";
+            var osDescription = RuntimeInformation.OSDescription;
+            var machineName = Environment.MachineName;
+
+            // TimeZoneInfo has unique Ids per OS
+            // Querying the wrong string will throw
+            TimeZoneInfo tzInfo = null;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                tzInfo = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                tzInfo = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                tzInfo = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+
+            else
+                tzInfo = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneInfo.Local.Id);
+
+            var message = string.Format("Hello from api-dotnet. running on: {0} {1}", 
+                osDescription,
+                tzInfo.ToString());
+
+            return message;
         }
     }
 }
