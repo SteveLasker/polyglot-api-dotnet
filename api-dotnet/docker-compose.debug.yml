@@ -1,16 +1,12 @@
 version: '2'
 
 services:
-  web-node:
-    image: stevelasker/web-node:latest
-    ports:
-      - "80:3000"
-    environment:
-      - HTTPPORT=3000
-      - APIPORT=5000
   api-dotnet:
     image: stevelasker/api-dotnet:debug
+    build:
+      context: .
+      dockerfile: Dockerfile.debug
     ports:
-      - "5000:5000"
+      - "80:80"
     environment:
       - REMOTE_DEBUGGING
