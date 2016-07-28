@@ -2,6 +2,7 @@ version: '2'
 
 services:
   api-dotnet:
+    image: stevelasker/api-dotnet:debug
     build:
       context: .
       dockerfile: Dockerfile.debug
