@@ -1,6 +1,10 @@
 FROM microsoft/dotnet:1.0.0-core
+
+# Set the Working Directory
 WORKDIR /app
-ENV ASPNETCORE_URLS http://*:80
-EXPOSE 80
-ENTRYPOINT ["dotnet", "api-dotnet.dll"]
+
+# Copy the app
 COPY . /app
+
+# Start the app
+ENTRYPOINT dotnet api-dotnet.dll

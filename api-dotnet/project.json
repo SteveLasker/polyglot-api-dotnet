@@ -25,7 +25,8 @@
       "Dockerfile.debug",
       "Dockerfile",
       "docker-compose.debug.yml",
-      "docker-compose.yml"
+      "docker-compose.yml",
+      ".dockerignore"
     ]
   }
 }

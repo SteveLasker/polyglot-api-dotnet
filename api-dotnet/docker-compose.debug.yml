@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.debug
-    ports:
-      - "80:80"
     environment:
-      - REMOTE_DEBUGGING
+      - REMOTE_DEBUGGING=${REMOTE_DEBUGGING}
+    volumes:
+      - .:/app
