@@ -14,6 +14,12 @@ Clears out any running containers (docker-compose kill, docker-compose rm -f).
 .PARAMETER Exec
 Executes a command in the container using docker exec.
 
+.PARAMETER GetUrl
+Gets the url for the site to open.
+
+.PARAMETER WaitForUrl
+Waits for url to respond.
+
 .PARAMETER Refresh
 Kills the running command in the container, publishes the project and restarts executing the command.
 
@@ -34,6 +40,9 @@ Specifies the project name used by docker-compose, defaults to the name of $Proj
 
 .PARAMETER NoCache
 Specifies the build argument --no-cache.
+
+.PARAMETER OpenSite
+Specifies whether to launch the site once the docker container is running, defaults to $True.
 
 .PARAMETER RemoteDebugging
 Specifies if remote debugging is needed, defaults to $False.
@@ -68,6 +77,10 @@ Param(
     [switch]$Run,
     [Parameter(ParameterSetName = "Exec", Position = 0, Mandatory = $True)]
     [switch]$Exec,
+    [Parameter(ParameterSetName = "GetUrl", Position = 0, Mandatory = $True)]
+    [switch]$GetUrl,
+    [Parameter(ParameterSetName = "WaitForUrl", Position = 0, Mandatory = $True)]
+    [switch]$WaitForUrl,
     [Parameter(ParameterSetName = "Refresh", Position = 0, Mandatory = $True)]
     [switch]$Refresh,
     [Parameter(ParameterSetName = "ValidateVolumeMapping", Position = 0, Mandatory = $True)]
@@ -82,6 +95,8 @@ Param(
     [parameter(ParameterSetName = "Build", Position = 2, Mandatory = $False)]
     [parameter(ParameterSetName = "Run", Position = 2, Mandatory = $False)]
     [parameter(ParameterSetName = "Exec", Position = 1, Mandatory = $False)]
+    [Parameter(ParameterSetName = "GetUrl", Position = 1, Mandatory = $False)]
+    [Parameter(ParameterSetName = "WaitForUrl", Position = 1, Mandatory = $False)]
     [parameter(ParameterSetName = "Refresh", Position = 2, Mandatory = $False)]
     [parameter(ParameterSetName = "ValidateVolumeMapping", Position = 1, Mandatory = $False)]
     [String]$Machine,
@@ -101,6 +116,8 @@ Param(
     [String]$ProjectName = (Split-Path -Path (Resolve-Path $ProjectFolder) -Leaf).ToLowerInvariant(),
     [parameter(ParameterSetName = "Build", Position = 5, Mandatory = $False)]
     [switch]$NoCache,
+    [parameter(ParameterSetName = "Run", Position = 5, Mandatory = $False)]
+    [bool]$OpenSite = $True,
     [parameter(ParameterSetName = "Run", Position = 6, Mandatory = $False)]
     [bool]$RemoteDebugging = $False,
     [parameter(ParameterSetName = "Build", Position = 6, Mandatory = $False)]
@@ -126,10 +143,10 @@ $launchURLPath = "api/hello"
 $ProjectName = $ProjectName -replace "[^a-zA-Z0-9]", ""
 
 # The name of the image created by the compose file
-$ImageName = "username/api-dotnet"
+$ImageName = "username/apidotnet"
 
 # Calculate the name of the container created by the compose file
-$ContainerName = "${ProjectName}_api-dotnet"
+$ContainerName = "${ProjectName}_apidotnet"
 
 # .net core runtime ID for the container (used to publish the app correctly)
 $RuntimeID = "debian.8-x64"
@@ -221,11 +238,28 @@ function ValidateVolumeMapping () {
 function Run () {
     $composeFilePath = GetComposeFilePath($pubPath)
 
+    $conflictingContainerIds = $(docker ps | select-string -pattern ":80->" | foreach { Write-Output $_.Line.split()[0] })
+
+    if ($conflictingContainerIds) {
+        $conflictingContainerIds = $conflictingContainerIds -Join ' '
+        Write-Host "Stopping conflicting containers using port 80"
+        $stopCommand = "docker stop $conflictingContainerIds"
+        Write-Verbose "Executing: $stopCommand"
+        Invoke-Expression "cmd /c $stopCommand `"2>&1`""
+        if ($LastExitCode -ne 0) {
+            Write-Error "Failed to stop the container(s)"
+        }
+    }
+
     $shellCommand = "docker-compose -f '$composeFilePath' -p $ProjectName up -d"
     Write-Verbose "Executing: $shellCommand"
     Invoke-Expression "cmd /c $shellCommand `"2>&1`""
     if ($LastExitCode -ne 0) {
         Write-Error "Failed to start the container(s)"
+    }
+
+    if ($OpenSite) {
+        OpenSite
     }
 }
 
@@ -237,6 +271,63 @@ function Exec () {
     Invoke-Expression $shellCommand
     if ($LastExitCode -ne 0) {
         Write-Error "Failed to exec command $Command in the container"
+    }
+}
+
+# Opens the remote site
+function OpenSite () {
+    # If we're going to debug, the server won't start immediately; don't need to wait for it.
+    if (-not $RemoteDebugging)
+    {
+        $uri = GetUrl
+
+        WaitForUrl $uri
+
+        # Open the site.
+        Start-Process $uri
+    }
+    else {
+        # Give the container 10 seconds to get ready
+        Start-Sleep 10
+    }
+} 
+
+# Gets the Url of the remote container
+function GetUrl () {
+    if ([System.String]::IsNullOrWhiteSpace($Machine)) {
+        $launchURL = [System.UriBuilder]"http://localhost"
+    }
+    else {
+        $launchURL = [System.UriBuilder]"http://$(docker-machine ip $Machine)"
+    }
+    $launchURL.Path = $launchURLPath
+    return $launchURL.Uri.AbsoluteUri
+}
+
+# Checks if the URL is responding
+function WaitForUrl ([string]$uri) {
+    Write-Host "Opening site $uri " -NoNewline
+    $status = 0
+    $count = 0
+
+    #Check if the site is available
+    while ($status -ne 200 -and $count -lt 120) {
+        try {
+            Write-Host "Trying to connect to $uri ($count/120)"
+            $response = Invoke-WebRequest -Uri $uri -Headers @{"Cache-Control"="no-cache";"Pragma"="no-cache"} -UseBasicParsing -Verbose:$false
+            $status = [int]$response.StatusCode
+        }
+        catch [System.Net.WebException] { }
+        if($status -ne 200) {
+            # Wait Time max. 2 minutes (120 sec.)
+            Start-Sleep 1
+            $count += 1
+        }
+    }
+    Write-Host
+    if($status -ne 200) {
+        # Check if bad volume mapping is the reason why we were not able to connect
+        ValidateVolumeMapping
     }
 }
 
@@ -383,6 +474,12 @@ if ($Run) {
 }
 if ($Exec) {
     Exec
+}
+if ($GetUrl) {
+    GetUrl
+}
+if ($WaitForUrl) {
+    WaitForUrl (GetUrl)
 }
 if ($Refresh) {
     Refresh

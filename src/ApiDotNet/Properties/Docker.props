@@ -11,7 +11,7 @@
 
     <!-- Use these properties to configure the process that will be started by the debugger in the container -->
     <DockerDebugStartProcess>dotnet</DockerDebugStartProcess>
-    <DockerDebugStartArgs>/app/api-dotnet.dll</DockerDebugStartArgs>
+    <DockerDebugStartArgs>/app/ApiDotNet.dll</DockerDebugStartArgs>
     <DockerDebugWorkingDirectory>/app/</DockerDebugWorkingDirectory>
   </PropertyGroup>
 </Project>
