@@ -137,16 +137,16 @@ $VerbosePreference = "Continue"
 $DockerWorkingDirectory = "/app/"
 
 # Path for the launch URL to be opened
-$launchURLPath = "api/hello"
+$launchURLPath = ""
 
 # The project name can only contain alphanumeric charecters, replace everything else with empty string
 $ProjectName = $ProjectName -replace "[^a-zA-Z0-9]", ""
 
 # The name of the image created by the compose file
-$ImageName = "username/apidotnet"
+$ImageName = "stevelasker/api-dotnet"
 
 # Calculate the name of the container created by the compose file
-$ContainerName = "${ProjectName}_apidotnet"
+$ContainerName = "${ProjectName}_api-dotnet"
 
 # .net core runtime ID for the container (used to publish the app correctly)
 $RuntimeID = "debian.8-x64"
@@ -238,11 +238,11 @@ function ValidateVolumeMapping () {
 function Run () {
     $composeFilePath = GetComposeFilePath($pubPath)
 
-    $conflictingContainerIds = $(docker ps | select-string -pattern ":80->" | foreach { Write-Output $_.Line.split()[0] })
+    $conflictingContainerIds = $(docker ps | select-string -pattern ":5000->" | foreach { Write-Output $_.Line.split()[0] })
 
     if ($conflictingContainerIds) {
         $conflictingContainerIds = $conflictingContainerIds -Join ' '
-        Write-Host "Stopping conflicting containers using port 80"
+        Write-Host "Stopping conflicting containers using port 5000"
         $stopCommand = "docker stop $conflictingContainerIds"
         Write-Verbose "Executing: $stopCommand"
         Invoke-Expression "cmd /c $stopCommand `"2>&1`""
