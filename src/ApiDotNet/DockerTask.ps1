@@ -143,10 +143,10 @@ $launchURLPath = ""
 $ProjectName = $ProjectName -replace "[^a-zA-Z0-9]", ""
 
 # The name of the image created by the compose file
-$ImageName = "stevelasker/api-dotnet"
+$ImageName = "stevelasker/apidotnet"
 
 # Calculate the name of the container created by the compose file
-$ContainerName = "${ProjectName}_api-dotnet"
+$ContainerName = "${ProjectName}_apidotnet"
 
 # .net core runtime ID for the container (used to publish the app correctly)
 $RuntimeID = "debian.8-x64"
