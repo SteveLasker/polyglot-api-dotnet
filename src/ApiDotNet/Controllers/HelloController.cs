@@ -28,7 +28,7 @@ namespace ApiDotNet.Controllers
             else
                 tzInfo = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneInfo.Local.Id);
 
-            var message = string.Format("Hello from api-dotnet FRIDAY YEAH running on: {0} {1}", 
+            var message = string.Format("Hello from api-dotnet, running on: {0} {1}", 
                 osDescription,
                 tzInfo.ToString());
 

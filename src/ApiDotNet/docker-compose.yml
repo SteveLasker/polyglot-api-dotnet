@@ -1,18 +1,10 @@
 version: '2'
 
 services:
-  webnode:
-    image: stevelasker/web-node
-    ports:
-      - 80:3000
-    environment:
-      - HTTPPORT=3000
-      - APIPORT=80
-      - APIURL=apidotnet
   apidotnet:
-    image: stevelasker/apidotnet
+    image: user/apidotnet
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5000:80"
+      - "80"
